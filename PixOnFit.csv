@@ -1,0 +1,8 @@
+﻿median value,1.110,130.00,,,,,
+MSE,0.038,17.60,,,,,
+mean,1.114,137.577,,,,,
+std,0.044,29.696,,,,,
+cellname,Center surround ratio,surround size (um),fit MSE,notes,Model SS,Real SS,Error in SS
+072517Bc2,1.11,112,0.009,,70,79,9
+020618Ac2    ,1.16,170,0.009,,69,81,12
+071117Bc9     ,1.07,130,0.003,,77,83,6

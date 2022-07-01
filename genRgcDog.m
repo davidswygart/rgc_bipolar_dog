@@ -1,4 +1,4 @@
-function rgcDog = genRgcDog(synLoc,bipolarDog,res)
+function rgcDog = genRgcDog(synLoc,bipolarDog,res, plotOp)
 
 %% determine the size necessary for the RGC dog image
 bipolarSz = size(bipolarDog,1);
@@ -30,16 +30,17 @@ for i=1:size(synLocInd,1)
 end
 rgcDog = rgcDog / max(rgcDog(:));
 
+if strcmp(plotOp, 'plot')
+    hold off
+    title('bipolar activation')
+    s = rgcCenterInd*res;
+    imagesc([-s,s],[-s,s],rgcDog)
+    %imagesc(bipolarExc)
 
-hold off
-title('bipolar activation')
-s = rgcCenterInd*res;
-imagesc([-s,s],[-s,s],rgcDog)
-%imagesc(bipolarExc)
-
-colorbar
-hold on
-scatter(synLoc(:,1),synLoc(:,2),'.','k')
-hold off
-xlabel('um')
+    colorbar
+    hold on
+    scatter(synLoc(:,1),synLoc(:,2),'.','k')
+    hold off
+    xlabel('um')
+end
 end

@@ -1,4 +1,4 @@
-function resp = smsExperiment(dog, res, spotSizesUm)
+function resp = smsExperiment(dog, res, spotSizesUm, plotOp)
 % minSpot = 30;
 % maxSpot = 1200;
 % numSpots = 50;
@@ -21,7 +21,10 @@ for i = 1:length(spotSizesUm)
 end
 
 resp = resp/max(resp);
-plot(spotSizesUm,resp)
-xlabel('Spot diameter (um)')
+
+if strcmp(plotOp, 'plot')
+    plot(spotSizesUm,resp)
+    xlabel('Spot diameter (um)')
+end
 
 end

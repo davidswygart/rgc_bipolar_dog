@@ -1,6 +1,8 @@
-function [dog] = genBipolarFilter(cSize, CSR, sSize, res, plotOp)
-cSize = cSize/2; %convert to 1 s.d.
-sSize = sSize/2; %convert to 1 s.d.
+function [dog] = genBipolarFilter(modelParams, plotOp)
+cSize = modelParams.cSize/2; %convert to 1 s.d.
+sSize = modelParams.sSize/2; %convert to 1 s.d.
+CSR = modelParams.CSR;
+res = modelParams.res;
 
 szFiltInd = ceil(sSize*6/res); % make the filter 6x standard Dev
 if ~mod(szFiltInd,2) %if even, make odd

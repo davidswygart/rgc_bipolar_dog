@@ -1,7 +1,7 @@
-function modelRgcResp = plotFullModel(spotSizes,realResp,cSize,sSize,CSR,res,filename,synPerMicron)
-%% import trace and choose sample synapse locations
-figure(10)
-sampleLoc = getRandSyns(filename,synPerMicron,'plot');
+function modelRgcResp = plotFullModel(dataTable,cSize,sSize,CSR,res)
+spotSizes = dataTable.spotSizes{1};
+realResp = dataTable.realResp{1};
+
 
 %% Bipolar DoG
 figure(11)
@@ -14,7 +14,7 @@ title('Spots multi-size response of bipolar cell')
 
 %% create image of bipolar input based on sample synapses
 figure(13)
-rgcDog = genRgcDog(sampleLoc,bipolarDog,res,'plot');
+rgcDog = genRgcDog(dataTable.randSyn{1}, bipolarDog,res,'plot');
 
 %% Run spots multi size on RGC
 figure(14)

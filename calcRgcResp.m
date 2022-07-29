@@ -1,25 +1,40 @@
-function modelOut = calcRgcResp(modelParams, rgcTable)
-res = modelParams.res;
+function modelOut = calcRgcResp(modelParams, rgcTable, plotOp)
 
-%% make bipolar DoG
-[bipolarDog] = genBipolarFilter(modelParams, 'no plot');
+%% information about precomputed random synapse image
+res = 5; %assumes 5 um/pix for precomputed synapse images
 
-%% create image of bipolar input based on sample synapses for each RGC
+sSize = modelParams.sSize/2/res; % convert to 1 SD and account for resolution
+CSR = modelParams.CSR;
+
+%% model Out
 numRGCs = length(rgcTable.randSyn);
 
 ctemp = cell(numRGCs,1);
-stemp = strings(numRGCs,1);
 dtemp = nan(numRGCs,1);
 
-modelOut = table(stemp,ctemp,ctemp,dtemp,dtemp,dtemp,...
-    'VariableNames', ["cellName","spotSizes","modelResp","respErr","modelSS","SsErr"]);
+modelOut = table(ctemp,dtemp,dtemp,dtemp,...
+    'VariableNames', ["modelResp","respErr","modelSS","SsErr"]);
+
+%% loop and filter for RGC image
 
 for i = 1:numRGCs
-    modelOut.cellName(i) = rgcTable.cellName(i);
-    modelOut.spotSizes{i} = rgcTable.spotSizes{i};
+    sImg = rgcTable.randSyn{i};
+    sImg= imgaussfilt(sImg,sSize)/CSR;
     
-    rgcDog = genRgcDog(rgcTable.randSyn{i},bipolarDog,res,'no plot');
-    rgcResp = smsExperiment(rgcDog, res, rgcTable.spotSizes{i}, 'no plot');
+    rgcDog = rgcTable.centerImg{i} - sImg;
+    
+    rgcResp = smsExperiment(rgcDog, modelParams.distanceImage{1}, rgcTable.spotSizes{i});
+    
+    if strcmp(plotOp, 'plot')
+        figure(107)
+        clf
+        hold on
+        plot(rgcTable.spotSizes{i},rgcResp)
+        plot(rgcTable.spotSizes{i},rgcTable.realResp{i})
+        xlabel('Spot diameter (um)')
+        hold off
+    end
+    
     suppression = 100*(1-rgcResp(end)/max(rgcResp));
     
     modelOut.modelResp(i) = {rgcResp};

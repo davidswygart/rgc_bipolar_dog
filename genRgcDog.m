@@ -31,6 +31,7 @@ end
 rgcDog = rgcDog / max(rgcDog(:));
 
 if strcmp(plotOp, 'plot')
+    figure(106)
     hold off
     title('bipolar activation')
     s = rgcCenterInd*res;

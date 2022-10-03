@@ -1,4 +1,4 @@
-function [trace, parentNode] = importTrace(filename, dataLines)
+function outputStruct = importTrace(filename, dataLines)
 %IMPORTFILE Import data from a text file
 %  TRACE = IMPORTFILE(FILENAME) reads data from text file FILENAME for
 %  the default selection.  Returns the data as a table.
@@ -47,7 +47,21 @@ temp = readtable(filename, opts);
 temp = table2cell(temp);
 temp = str2double(temp);
 trace = temp(:,3:5);
+trace = trace - mean(trace,1);%center the nodes at the centroid
 parentNode = temp(:,7);
+
+%% calculate total dendritic distance
+curLoc = trace(2:end,:);
+parentLoc = trace(parentNode(2:end),:);
+
+nodeDists = sqrt((curLoc(:,1) - parentLoc(:,1)).^2 + (curLoc(:,2)-parentLoc(:,2)).^2 + (curLoc(:,3) - parentLoc(:,3)).^2);
+totalDendDist = sum(nodeDists);
+
+%% output the trace, total dendritic distance, and the index of the location of the parent node
+outputStruct = struct();
+outputStruct.trace = trace;
+outputStruct.totalLength = totalDendDist;
+outputStruct.parentLoc = parentLoc;
 
 
 end

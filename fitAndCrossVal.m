@@ -1,73 +1,82 @@
-function [allFits,crossVals] = fitAndCrossVal(rgcTable,otherRgcType,modelParams)
-%% set constants and starting parameters
-CSRmult = 100;
-modelParams.CSR = modelParams.CSR*CSRmult;
+function fits = fitAndCrossVal(rgcs,fitInds)
 
-fitParams = [modelParams.CSR, modelParams.sSize];
 
-%% set constraints
-minSize = 50;
-maxSize = 1000;
-minCSR = .5*CSRmult;
-maxCSR = 10*CSRmult;
+%% create a struct with model constants and starting values (cSize, sSize, CSR, res) 
+% modelParams.cSize = 22; 
+% % 22 - The spatial structure of a nonlinear receptive field
+% % 21.5 - Response Characteristics and receptif field widths of ON-Bipolar cells in the mouse retina
+% % 20 - Inhibition Decorrelates visual feature represntation in the inner retina
+% % 40.6 - Two-photon imaging of nonlinear glutamate release dynamics at bipolar cell synapses in the mouse retina
 
-%% choose holdout for cross validation
-totalRGCs = size(rgcTable,1);
-rcgInds = 1:totalRGCs;
+modelParams.sSize = 100;
+% 127-170 - Inhibition Decorrelates visual feature represntation in the inner retina
+% 73.2 - Two-photon imaging of nonlinear glutamate release dynamics at bipolar cell synapses in the mouse retina
 
-if totalRGCs < 3
-    holdOutInds = -1;
-    nperms = 1;
-else
-    holdOutInds = nchoosek(rcgInds, nHoldOut);
-    nperms = size(holdOutInds,1);
-end
+modelParams.CSR = 1;
+% 1.12 - Two-photon imaging of nonlinear glutamate release dynamics at bipolar cell synapses in the mouse retina
+% 0.65 - .9 - Inhibition Decorrelates visual feature represntation in the inner retina
 
-%holdOutInds = nchoosek(rcgInds, nHoldOut);
-%nperms = size(holdOutInds,1);
 
-%% Optimize parameters (CSR and surround size), and run cross validation
-n = nan(nperms,1);
-c = cell(nperms,1);
+%% set constraints on surround size and CSR
+minSize = 25;
+maxSize = 500;
+minCSR = .4;
+maxCSR = 5;
 
-allFits = repmat(modelParams(1,:),[nperms,1]);
-allFits = [allFits, table(n,n,c,'VariableNames',["MSE","exitflag","fitInds"])];
+%% precomputed a 1200 um wide distance image (largest spot size)
+res = 5;
+[x,y] = ndgrid(-600 : res : 600);
+modelParams.distImage = sqrt(x.^2 + y.^2);
 
-crossVals.thisRGC.ssErr = nan(nperms,totalRGCs);
-crossVals.thisRGC.MSE = nan(nperms,totalRGCs);
-crossVals.otherRGC.ssErr = nan(nperms,length(otherRgcType.cellName));
-crossVals.otherRGC.MSE = nan(nperms,length(otherRgcType.cellName));
+%% set up problem (and normalize parameters)
+normalizeFactor = [modelParams.CSR, modelParams.sSize];
 
-for i=1:nperms
-    %% fit to a subset of RGCs
-    tic
-    fitInds = rcgInds(~ismember(rcgInds, holdOutInds(i,:)));
-    allFits.fitInds{i} = fitInds;
-    
-    fitTable = rgcTable(fitInds,:);
-    f = @(x)modelError(x, fitTable, modelParams);
-    [solution, MSE, exitflag, output] = fmincon(f,fitParams,[],[],[],[],[minCSR,minSize],[maxCSR,maxSize]);
-    
-    %% save the fit values
-    allFits.CSR(i) = solution(1)/CSRmult;
-    allFits.sSize(i) = solution(2);
-    allFits.MSE(i) = MSE/1000;
-    allFits.exitflag(i) = exitflag;
-    
-    %% cross validate on the rest of this RGC type
-    testInds = rcgInds(ismember(rcgInds, holdOutInds(i,:)));
-    testTable = rgcTable(testInds,:);
-    modelOut = calcRgcResp(allFits(i,1:5), testTable, 'no plot');
-    crossVals.thisRGC.ssErr(i,testInds) = modelOut.SsErr;
-    crossVals.thisRGC.MSE(i,testInds) = modelOut.respErr;
-    
-   %% cross validate on the other RGC type
-    modelOut = calcRgcResp(allFits(i,1:5), otherRgcType, 'no plot');
-    crossVals.otherRGC.ssErr(i,:) = modelOut.SsErr;
-    crossVals.otherRGC.MSE(i,:) = modelOut.respErr;
-    
-    
-    display(['fit ' num2str(i) ' of ' num2str(nperms)])
-    toc
-end
+problem.x0 = [1,1]; %values are normalized to 1
+problem.lb = [minCSR, minSize] ./ normalizeFactor;
+problem.ub = [maxCSR, maxSize,] ./ normalizeFactor;
+problem.solver = 'fmincon';
+problem.options = optimoptions('fmincon');
+%problem.options.OptimalityTolerance = 1e-5;
+%problem.options.StepTolerance = 1e-8;
+
+%% create a table for all of the fits and the values we want to save
+nperms = length(fitInds);
+
+fits = table();
+fits.sSize = nan(nperms,1);
+fits.CSR = nan(nperms,1);
+fits.MAE = nan(nperms,1);
+fits.exitFlag = nan(nperms,1);
+fits.fitInds = fitInds';
+fits.crossVal = cell(nperms,1);
+
+
+    for i=1:nperms
+        tic
+
+        %% run optimization
+        fitRgcs = rgcs(logical(fitInds{i}),:);
+        problem.objective = @(x)objectiveFunction(x, fitRgcs, modelParams);
+        [solution, err, exitflag] = fmincon(problem);
+
+        %objectiveFunction(solution, fit1, fit2, modelParams)
+
+
+
+        %% save the fit values
+        fits.CSR(i) = solution(1) * normalizeFactor(1);
+
+        fits.sSize(i) = solution(2) * normalizeFactor(2);
+        fits.MAE(i) = err;
+        fits.exitFlag(i) = exitflag;
+        
+        display(['fit ' num2str(i) ' of ' num2str(nperms)])
+        toc
+
+        %% cross validate
+        newParams = modelParams;
+        newParams.CSR = fits.CSR(i);
+        newParams.sSize = fits.sSize(i);
+        fits.crossVal(i) = {calcRgcResp(rgcs, newParams,'plot')};
+    end
 end

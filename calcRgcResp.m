@@ -1,48 +1,47 @@
-function outputTable = calcRgcResp(modelParams, rgcTable, plotOp)
+function tableOut = calcRgcResp(rgcs, modelParams,  plotOp)
 
-%% information about precomputed random synapse image
-res = modelParams.resolution;
+%% parameter values for surround
+res = 5;
 sSize = modelParams.sSize/res; % convert to pixel units
 CSR = modelParams.CSR;
+filtSize = 6*ceil(sSize)+1;
 
 %% model Out: all the variables we want to save for each RGC response
-numRGCs = size(rgcTable,1);
-outputTable = table();
-outputTable.resp = cell(numRGCs,1);
-outputTable.r2 = nan(numRGCs,1);
-outputTable.modelSS = nan(numRGCs,1);
-outputTable.SsErr = nan(numRGCs,1);
+numRGCs = size(rgcs,1);
+tableOut = table();
+tableOut.cellName = rgcs.cellName;
+tableOut.type = rgcs.type;
+tableOut.resp = cell(numRGCs,1);
+tableOut.MAE = nan(numRGCs,1);
+tableOut.sup = nan(numRGCs,1);
+tableOut.supErr = nan(numRGCs,1);
+
 
 %% loop and filter for RGC image
-for i = 1:numRGCs
-    sImg = rgcTable.randSyn{i};
-    filtSize = 6*ceil(sSize)+1;
+    for i = 1:numRGCs
+    sImg = rgcs.randSyn{i};
     sImg = imgaussfilt(sImg,sSize, 'FilterSize', filtSize);
+    dog = CSR * rgcs.cImg{i} - sImg;
     
-    rgcDog = rgcTable.cImg{i} - sImg / CSR;
-    
-    rgcResp = smsExperiment(rgcDog, modelParams.distImage, rgcTable.spotSizes{i});
-    
+    rgcResp = smsExperiment(dog, modelParams.distImage, rgcs.spotSizes{i});
+    realResp = rgcs.realResp{i};
+
     if strcmp(plotOp, 'plot')
         figure(107)
         clf
         hold on
-        plot(rgcTable.spotSizes{i},rgcResp)
-        plot(rgcTable.spotSizes{i},rgcTable.realResp{i})
+        plot(rgcs.spotSizes{i}, rgcResp)
+        plot(rgcs.spotSizes{i}, realResp)
         xlabel('Spot diameter (um)')
         hold off
         legend('model response', 'real response')
     end
     
-    suppression = 100*(1-rgcResp(end)/max(rgcResp));
+    suppression = 100*(1 - rgcResp(end)/max(rgcResp));
 
-    realResp = rgcTable.realResp{i};
-    sumSquareResidual = sum((realResp - rgcResp).^2);
-    totSumSquare = sum((realResp - mean(realResp)).^2);
-    r2 =  1 - sumSquareResidual / totSumSquare;
-
-    outputTable.resp(i) = {rgcResp};
-    outputTable.r2(i) = r2;
-    outputTable.modelSS(i) = suppression;
-    outputTable.SsErr(i) = suppression-rgcTable.measuredSS(i);
+    tableOut.resp(i) = {rgcResp};
+    tableOut.MAE(i) = mean(abs(realResp-rgcResp));
+    tableOut.sup(i) = suppression;
+    tableOut.supErr(i) = suppression-rgcs.measuredSS(i);
+    end
 end

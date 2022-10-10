@@ -15,6 +15,7 @@
 nPerms = 2;
 nTrain = 6;
 
+nRgcs = 22;
 nAlpha = 8;
 nPix = 14;
 
@@ -42,89 +43,33 @@ inds = num2cell(inds,1);
 
 bothFit = fitAndCrossVal(rgcs, inds);
 
-%%
-% %% Examine cross error and ss error
-% %f = pixFitsMAE;
-% %f = pixFitSquaredErr;
-% f = pixFits;
-% n = size(f,1);
-% 
-% spotSizes = rgcs.spotSizes{1};
-% 
-% 
-% ssErr = nan(size(rgcs,1), n);
-% err = nan(size(rgcs,1), n);
-% resps = nan(size(rgcs,1), length(spotSizes), n);
-% 
-% for i=1:n
-%     cv = f.crossVal{i};
-%     err(:,i) = cv.MAE;
-%     ssErr(:,i) = cv.SsErr;
-%     resps(:,:,i) = cell2mat(cv.modelResp);
-% end
-% 
-% %resps = permute(resps, [1,3,2]);
-% %resps = 
-% resps = mean(resps,3);
-% 
-% %%
-% hold on
-% for i=9:22
-%     %hold off
-%     %plot(spotSizes,resps(i,:))
-%     %hold on
-%     %plot(spotSizes, rgcs.realResp{i})
-% 
-%     d = rgcs.realResp{i} - resps(i,:);
-%     plot(spotSizes, d)
-%     
-% end
-% hold off
-% %%
-% cvInds = ~cell2mat(f.fitInds');
-% 
-% cvSsErr = nan(size(ssErr));
-% cvSsErr(cvInds) = ssErr(cvInds);
-% mcvErr = mean(cvSsErr,2,'omitnan');
-% 
-% 
-% cvErr = nan(size(err));
-% cvErr(cvInds) = err(cvInds);
-% mErr = mean(cvErr,2,'omitnan');
-% %%
-% %histogram(mcvErr,12)
-% histogram(mErr,12)
-f = pixFits;
-for i = 1:size(f,1)
-    cv = f.crossVal{i};
 
-    cv.spotSizes = [];
-    cv.realResp = [];
-    cv.measuredSS = [];
-    cv.trace = [];
-    cv.randSyn = [];
-    cv.cImg = [];
-    cv.sImg = [];
-    cv.dog = [];
-    f.crossVal(i) = {cv};
-end
-
-pixFits = f;
-
+%% analyze fits
+[fRgcs, cRgcs] = analyzeFits(pixFits);
+[fRgcs, cRgcs] = analyzeFits(alphaFits);
+[fRgcs, cRgcs] = analyzeFits(bothFit);
 
 %%
-for i=1:size(rgcs,1)
-    min(cv.resp{i})
+figure (11)
 
-
-    %rgcs.realResp(i) = {rgcs.realResp{i} / max(rgcs.realResp{i})};
+for i = 9:21
+    clf
+    hold on
+    plot(rgcs.spotSizes{i}, rgcs.realResp{i})
+    plot(rgcs.spotSizes{i}, fRgcs.resp{i})
+    legend('real','model')
+    
 end
 
+%%
+figure (12)
+for i = 1:8
+    clf
+    hold on
+    plot(rgcs.spotSizes{i}, rgcs.realResp{i})
+    plot(rgcs.spotSizes{i}, cRgcs.resp{i})
+    legend('real','model')
+end
 
-
-
-
-
-
-
-
+%%
+fitAndCrossVal(bipolar, 1)

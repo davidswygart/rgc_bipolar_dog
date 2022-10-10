@@ -9,19 +9,21 @@ figure(101)
 clf
 plot(spotSizes,realResp)
 
-temp = 0:12:1200;
-realResp = interp1(spotSizes,realResp,temp,'pchip','extrap'); %interpolate for even sampling of error
+temp = 0:60:1200;
+r = interp1(spotSizes,realResp,temp,'linear','extrap'); %interpolate for even sampling of error
+
 spotSizes = temp;
 
 hold on
-plot(spotSizes,realResp)
-legend('real','interpolated')
-
-measuredSS = 100*(1-(realResp(end)/max(realResp)));
-
-
-sms{i,1} = {spotSizes};
-sms{i,2} = realResp;
-sms{i,3} = measuredSS;
-
-i = i+1;
+plot(spotSizes,r)
+plot(spotSizes,smooth(r))
+legend('real','interpolated','smoothed')
+% 
+% measuredSS = 100*(1-(realResp(end)/max(realResp)));
+% 
+% 
+% sms{i,1} = {spotSizes};
+% sms{i,2} = realResp;
+% sms{i,3} = measuredSS;
+% 
+% i = i+1;

@@ -73,16 +73,16 @@ end
 z = zeros(1001,1001);
 z(500,500) = 1;
 
-cImg = imgaussfilt(z, 120, "FilterSize", 1001);
+cImg = imgaussfilt(z, 100, "FilterSize", 1001);
 cImg = cImg / max(cImg(:));
-sImg = imgaussfilt(z, 300, "FilterSize", 1001);
+sImg = imgaussfilt(z, 200, "FilterSize", 1001);
 sImg = -sImg / max(sImg(:));
 
-dog1 = cImg + sImg / 1.65;
+dog1 = cImg + sImg;
 dog2 = cImg + sImg / 5;
 
-dog1 = dog1 / max(dog1(:));
-dog2 = dog2 / max(dog2(:));
+%dog1 = dog1 / max(dog1(:));
+%dog2 = dog2 / max(dog2(:));
 
 
 figure(2)
@@ -94,16 +94,14 @@ clim([-1,1])
 subplot(2,2,2)
 imagesc(sImg)
 title('sImg')
-clim([-1,1])
 
 subplot(2,2,3)
 imagesc(dog1)
 title('dog strong surround')
-clim([-1,1])
 
 subplot(2,2,4)
 imagesc(dog2)
 title('dog weak surround')
-clim([-1,1])
 
+colorbar
 colormap(c)

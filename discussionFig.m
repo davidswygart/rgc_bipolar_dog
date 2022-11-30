@@ -1,4 +1,4 @@
-rgcOfInterest = rgcs(9:21,:);
+rgcOfInterest = rgcs(1:8,:);
 nRgcs = size(rgcOfInterest,1);
 
 %% precomputed a 1200 um wide distance image (largest spot size)
@@ -10,14 +10,11 @@ modelParams.distImage = sqrt(x.^2 + y.^2);
 modelParams.sSize = 75.0001;
 
 %% run loop changing CSR
-starting_CSR = 1;
+starting_CSR = 1.1; % start with the assumption of PixON best fit CSR
+% inhDecay = 0:1:99;
+allCSR = starting_CSR ./ (1-inhDecay/100);
 
-Vrib = 1:-.01:.01;
-
-nPoints = length(Vrib);
-
-allCSR = starting_CSR ./ Vrib;
-
+nPoints = length(allCSR);
 sup = nan(nRgcs, nPoints);
 
 for i = 1:nPoints
@@ -28,7 +25,6 @@ end
 %%
 avgSup = mean(sup,1)';
 stdSup = std(sup,0,1)';
-Vrib = Vrib';
 
 %%
 % vFall = activeDrop;
@@ -48,7 +44,7 @@ filtSize =6*ceil(sSig)+1;
 cImg = imgaussfilt(syn,cSig, 'FilterSize', filtSize);
 sImg = imgaussfilt(syn,sSig, 'FilterSize', filtSize);
 
-allCSR = [1, 1.25, 1.67];
+allCSR = [1.1, 1.5];
 
 resp = nan(21,nRgcs);
 for i=1:length(allCSR)
